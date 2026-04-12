@@ -403,6 +403,7 @@ html, body {
     'главная':     { icon:'🏠', url:'/home' },
     'о нас':       { icon:'ℹ️',  url:'/about' },
     'каталог':     { icon:'📦', url:'/catalog' },
+    'платежи':     { icon:'💳', url:'/payments' },
     'статья':      { icon:'📝', url:'/article' },
     'контакты':    { icon:'📞', url:'/contacts' },
     'корзина':     { icon:'🛒', url:'/cart' },
@@ -549,7 +550,7 @@ html, body {
   document.getElementById('go-input').addEventListener('keydown',      e => e.key==='Enter' && doGo());
 
   render();
-  const DEMO_PAGES = ['Главная', 'Каталог', 'Разводящая', 'Шаг 1', 'Шаг 2', 'Шаг 3', 'Статусный экран'];
+  const DEMO_PAGES = ['Главная', 'Платежи', 'Разводящая', 'Шаг 1', 'Шаг 2', 'Шаг 3', 'Статусный экран'];
   const DEMO_ACTIVE_INDEX = 2;
   DEMO_PAGES.forEach((name, i) => setTimeout(() => {
     document.getElementById('push-input').value = name;
