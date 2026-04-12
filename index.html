@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>История браузера</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  font-family: 'Inter', sans-serif;
+  background: #f0f2f5;
+  overflow: hidden;
+}
+
+.app {
+  height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  grid-template-columns: 1fr 300px;
+  grid-template-areas:
+    "browser  sidebar"
+    "timeline sidebar"
+    "log      sidebar";
+  gap: 12px;
+  padding: 12px;
+}
+
+/* ===================== BROWSER CHROME ===================== */
+.browser {
+  grid-area: browser;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+  overflow: hidden;
+}
+
+.browser-bar {
+  background: #f8f8f8;
+  border-bottom: 1px solid #e5e5e5;
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dots { display: flex; gap: 6px; }
+.dot { width: 12px; height: 12px; border-radius: 50%; }
+.dot-r { background: #ff5f57; }
+.dot-y { background: #ffbd2e; }
+.dot-g { background: #28c840; }
+
+.nav-btns { display: flex; gap: 2px; }
+.nav-btn {
+  width: 28px; height: 28px;
+  border: none; background: none; cursor: pointer;
+  border-radius: 6px; color: #666; font-size: 16px;
+  display: flex; align-items: center; justify-content: center;
+  transition: background .15s;
+}
+.nav-btn:hover:not(:disabled) { background: #e8e8e8; }
+.nav-btn:disabled { opacity: .3; cursor: default; }
+
+.address-bar {
+  flex: 1;
+  background: #ebebeb;
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.address-bar.flash { animation: addrFlash .5s ease; }
+@keyframes addrFlash {
+  0%   { background: #d1fae5; }
+  100% { background: #ebebeb; }
+}
+
+.page-display {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 10px;
+  padding: 28px;
+  min-height: 120px;
+}
+
+.page-icon-big { font-size: 48px; line-height: 1; }
+.page-icon-big.pop { animation: iconPop .35s cubic-bezier(.34,1.56,.64,1); }
+@keyframes iconPop {
+  0%   { transform: scale(.5); opacity: 0; }
+  100% { transform: scale(1);  opacity: 1; }
+}
+
+.page-name-big { font-size: 20px; font-weight: 600; color: #111; }
+.page-empty-hint { color: #bbb; font-size: 13px; text-align: center; line-height: 1.6; }
+
+/* ===================== TIMELINE ===================== */
+.timeline-wrap {
+  grid-area: timeline;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.timeline-label {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: #aaa; margin-bottom: 12px; flex-shrink: 0;
+}
+
+.timeline {
+  display: flex;
+  align-items: center;
+  overflow-x: auto;
+  flex: 1;
+  padding-bottom: 2px;
+  gap: 0;
+}
+.timeline::-webkit-scrollbar { height: 4px; }
+.timeline::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 2px; }
+
+.tl-step {
+  display: flex; align-items: center;
+  flex-shrink: 0;
+  opacity: 0; transform: scale(.7);
+  transition: opacity .3s, transform .35s cubic-bezier(.34,1.56,.64,1);
+}
+.tl-step.vis { opacity: 1; transform: scale(1); }
+
+.tl-node { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+
+.tl-bubble {
+  width: 42px; height: 42px; border-radius: 50%;
+  background: #f5f5f5; border: 2.5px solid #ddd;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 19px; transition: all .3s;
+}
+
+.tl-step.current .tl-bubble {
+  border-color: var(--c);
+  background: var(--bg);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--c) 18%, transparent);
+}
+
+.tl-step.future .tl-bubble { opacity: .3; }
+
+.tl-name {
+  font-size: 10px; color: #aaa; max-width: 54px;
+  text-align: center; overflow: hidden;
+  text-overflow: ellipsis; white-space: nowrap;
+}
+.tl-step.current .tl-name { color: #222; font-weight: 600; }
+
+.tl-line {
+  width: 30px; height: 2px;
+  background: #e0e0e0; flex-shrink: 0;
+  position: relative; top: -12px;
+}
+.tl-step.future .tl-line { opacity: .3; }
+
+.tl-empty { color: #ccc; font-size: 13px; }
+
+/* ===================== LOG ===================== */
+.log-wrap {
+  grid-area: log;
+  background: #fff; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+  padding: 10px 16px;
+  display: flex; align-items: center; gap: 10px;
+  overflow: hidden;
+}
+
+.log-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; font-weight: 500;
+  padding: 3px 9px; border-radius: 5px;
+  white-space: nowrap; flex-shrink: 0;
+}
+
+.log-text {
+  font-size: 13px; color: #555;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1;
+}
+
+.log-time {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px; color: #bbb; flex-shrink: 0;
+}
+
+/* ===================== SIDEBAR ===================== */
+.sidebar {
+  grid-area: sidebar;
+  display: flex; flex-direction: column; gap: 10px;
+  overflow-y: auto;
+}
+.sidebar::-webkit-scrollbar { display: none; }
+
+.sidebar-title {
+  font-size: 10px; font-weight: 600;
+  letter-spacing: .08em; text-transform: uppercase;
+  color: #aaa; padding: 0 2px; flex-shrink: 0;
+}
+
+.action-card {
+  background: #fff; border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0,0,0,.1);
+  padding: 14px; border-left: 3px solid var(--ac);
+  flex-shrink: 0;
+}
+
+.ac-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
+
+.ac-icon {
+  font-size: 18px; width: 32px; height: 32px;
+  background: color-mix(in srgb, var(--ac) 12%, white);
+  border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.ac-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11.5px; font-weight: 500;
+  color: var(--ac); margin-bottom: 2px;
+}
+.ac-desc { font-size: 11px; color: #888; line-height: 1.45; }
+
+.ac-body { display: flex; gap: 6px; align-items: center; }
+
+.ac-input {
+  flex: 1; min-width: 0;
+  border: 1.5px solid #e8e8e8; border-radius: 8px;
+  padding: 7px 10px; font-size: 12px;
+  font-family: 'Inter', sans-serif;
+  outline: none; color: #333;
+  transition: border-color .15s;
+}
+.ac-input:focus { border-color: var(--ac); }
+.ac-input.narrow { width: 56px; flex: none; text-align: center; }
+
+.ac-btn {
+  border: none; border-radius: 8px;
+  padding: 7px 12px; font-size: 12px; font-weight: 600;
+  font-family: 'Inter', sans-serif; cursor: pointer;
+  background: var(--ac); color: #fff; white-space: nowrap;
+  transition: opacity .15s, transform .1s; flex-shrink: 0;
+}
+.ac-btn:hover:not(:disabled) { opacity: .85; }
+.ac-btn:active:not(:disabled) { transform: scale(.96); }
+.ac-btn:disabled { opacity: .3; cursor: default; }
+.ac-btn-full { width: 100%; }
+
+.ac-muted { font-size: 12px; color: #bbb; flex-shrink: 0; }
+
+.push-card { --ac: #6366f1; }
+.rep-card  { --ac: #f59e0b; }
+.back-card { --ac: #10b981; }
+.fwd-card  { --ac: #0ea5e9; }
+.go-card   { --ac: #ef4444; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== BROWSER ===== -->
+  <div class="browser">
+    <div class="browser-bar">
+      <div class="dots">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+      </div>
+      <div class="nav-btns">
+        <button class="nav-btn" id="nav-back" onclick="doBack()" title="Назад">‹</button>
+        <button class="nav-btn" id="nav-fwd"  onclick="doForward()" disabled title="Вперёд">›</button>
+      </div>
+      <div class="address-bar" id="address-bar">myapp.ru — нажмите «Добавить» →</div>
+    </div>
+    <div class="page-display" id="page-display">
+      <div class="page-empty-hint">Откройте первую страницу<br>с помощью кнопки «Добавить»</div>
+    </div>
+  </div>
+
+  <!-- ===== SIDEBAR ===== -->
+  <div class="sidebar">
+    <div class="sidebar-title">Методы навигации</div>
+
+    <div class="action-card push-card">
+      <div class="ac-head">
+        <div class="ac-icon">➕</div>
+        <div>
+          <div class="ac-label">history.push()</div>
+          <div class="ac-desc">Новая страница поверх текущей — прошлая сохраняется</div>
+        </div>
+      </div>
+      <div class="ac-body">
+        <input class="ac-input" id="push-input" placeholder="Название..." value="Главная" />
+        <button class="ac-btn" onclick="doPush()">Добавить</button>
+      </div>
+    </div>
+
+    <div class="action-card rep-card">
+      <div class="ac-head">
+        <div class="ac-icon">🔄</div>
+        <div>
+          <div class="ac-label">history.replace()</div>
+          <div class="ac-desc">Заменяет текущую страницу и стирает весь стек вперёд — как и push()</div>
+        </div>
+      </div>
+      <div class="ac-body">
+        <input class="ac-input" id="replace-input" placeholder="Новое название..." value="Обновлённая" />
+        <button class="ac-btn" id="btn-replace" onclick="doReplace()">Заменить</button>
+      </div>
+    </div>
+
+    <div class="action-card back-card">
+      <div class="ac-head">
+        <div class="ac-icon">⬅️</div>
+        <div>
+          <div class="ac-label">history.goBack()</div>
+          <div class="ac-desc">Один шаг назад — как кнопка «‹» браузера</div>
+        </div>
+      </div>
+      <div class="ac-body">
+        <button class="ac-btn ac-btn-full" id="btn-back" onclick="doBack()">← Назад на одну страницу</button>
+      </div>
+    </div>
+
+    <div class="action-card fwd-card">
+      <div class="ac-head">
+        <div class="ac-icon">➡️</div>
+        <div>
+          <div class="ac-label">history.goForward()</div>
+          <div class="ac-desc">Один шаг вперёд — как кнопка «›» браузера</div>
+        </div>
+      </div>
+      <div class="ac-body">
+        <button class="ac-btn ac-btn-full" id="btn-fwd" onclick="doForward()">Вперёд на одну страницу →</button>
+      </div>
+    </div>
+
+    <div class="action-card go-card">
+      <div class="ac-head">
+        <div class="ac-icon">⏩</div>
+        <div>
+          <div class="ac-label">history.go(N)</div>
+          <div class="ac-desc">Прыжок на N шагов: отрицательное — назад, положительное — вперёд</div>
+        </div>
+      </div>
+      <div class="ac-body">
+        <span class="ac-muted">go(</span>
+        <input class="ac-input narrow" id="go-input" type="number" value="-2" />
+        <span class="ac-muted">)</span>
+        <button class="ac-btn" id="btn-go" onclick="doGo()">Прыгнуть</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== TIMELINE ===== -->
+  <div class="timeline-wrap">
+    <div class="timeline-label">История переходов</div>
+    <div class="timeline" id="timeline">
+      <div class="tl-empty">Пока пусто — откройте первую страницу</div>
+    </div>
+  </div>
+
+  <!-- ===== LOG ===== -->
+  <div class="log-wrap">
+    <span class="log-badge" id="log-badge" style="background:#f0f0f0;color:#bbb">—</span>
+    <span class="log-text" id="log-text">Ожидание действий...</span>
+    <span class="log-time" id="log-time"></span>
+  </div>
+
+</div>
+<script>
+  let stack = [];
+  let cur   = -1;
+
+  const PALETTE = [
+    { c:'#6366f1', bg:'#eef2ff' },
+    { c:'#f59e0b', bg:'#fef3c7' },
+    { c:'#10b981', bg:'#d1fae5' },
+    { c:'#ef4444', bg:'#fee2e2' },
+    { c:'#ec4899', bg:'#fce7f3' },
+    { c:'#0ea5e9', bg:'#e0f2fe' },
+    { c:'#a855f7', bg:'#f3e8ff' },
+  ];
+
+  const PRESETS = {
+    'главная':     { icon:'🏠', url:'/home' },
+    'о нас':       { icon:'ℹ️',  url:'/about' },
+    'каталог':     { icon:'📦', url:'/catalog' },
+    'статья':      { icon:'📝', url:'/article' },
+    'контакты':    { icon:'📞', url:'/contacts' },
+    'корзина':     { icon:'🛒', url:'/cart' },
+    'профиль':     { icon:'👤', url:'/profile' },
+    'настройки':   { icon:'⚙️', url:'/settings' },
+    'поиск':       { icon:'🔍', url:'/search' },
+    'блог':        { icon:'✍️', url:'/blog' },
+    'обновлённая': { icon:'✨', url:'/updated' },
+  };
+
+  function makePage(name) {
+    const key = name.toLowerCase().trim();
+    const p   = PRESETS[key] || { icon:'📄', url:'/' + key.replace(/\s+/g, '-') };
+    return { name: name.trim() || 'Страница', icon: p.icon, url: p.url };
+  }
+
+  function render(flash) {
+    // Browser
+    const addr    = document.getElementById('address-bar');
+    const display = document.getElementById('page-display');
+    if (cur < 0) {
+      addr.textContent = 'myapp.ru — нажмите «Добавить» →';
+      display.innerHTML = '<div class="page-empty-hint">Откройте первую страницу<br>с помощью кнопки «Добавить»</div>';
+    } else {
+      const p = stack[cur];
+      addr.textContent = 'myapp.ru' + p.url;
+      if (flash) { addr.classList.remove('flash'); void addr.offsetWidth; addr.classList.add('flash'); }
+      display.innerHTML = `<div class="page-icon-big pop">${p.icon}</div><div class="page-name-big">${p.name}</div>`;
+    }
+
+    // Timeline
+    const tl = document.getElementById('timeline');
+    tl.innerHTML = '';
+    if (stack.length === 0) {
+      tl.innerHTML = '<div class="tl-empty">Пока пусто — откройте первую страницу</div>';
+    } else {
+      stack.forEach((page, i) => {
+        const pal = PALETTE[i % PALETTE.length];
+        const isCur = i === cur, isFut = i > cur;
+        const step = document.createElement('div');
+        step.className = 'tl-step vis' + (isCur?' current':'') + (isFut?' future':'');
+        step.style.cssText = `--c:${pal.c};--bg:${pal.bg}`;
+        step.innerHTML = `
+          <div class="tl-node">
+            <div class="tl-bubble" ${isCur?`style="background:${pal.bg};border-color:${pal.c}"`:''}>${page.icon}</div>
+            <div class="tl-name">${page.name}</div>
+          </div>
+          ${i < stack.length-1 ? `<div class="tl-line${i>=cur?' future':''}"></div>` : ''}
+        `;
+        tl.appendChild(step);
+      });
+      setTimeout(() => {
+        const steps = tl.querySelectorAll('.tl-step');
+        if (steps[cur]) steps[cur].scrollIntoView({ behavior:'smooth', inline:'center', block:'nearest' });
+      }, 60);
+    }
+
+    // Buttons
+    const noCur  = cur < 0;
+    const atStart = cur <= 0;
+    const atEnd   = cur >= stack.length - 1;
+    document.getElementById('btn-back').disabled    = atStart;
+    document.getElementById('nav-back').disabled    = atStart;
+    document.getElementById('btn-fwd').disabled     = atEnd;
+    document.getElementById('nav-fwd').disabled     = atEnd;
+    document.getElementById('btn-replace').disabled = noCur;
+    document.getElementById('btn-go').disabled      = noCur;
+  }
+
+  function setLog(method, text, color) {
+    const badge = document.getElementById('log-badge');
+    badge.textContent = method;
+    badge.style.background = color + '22';
+    badge.style.color = color;
+    document.getElementById('log-text').textContent = text;
+    const now = new Date();
+    document.getElementById('log-time').textContent =
+      [now.getHours(), now.getMinutes(), now.getSeconds()]
+        .map(v => String(v).padStart(2,'0')).join(':');
+  }
+
+  function doPush() {
+    const el = document.getElementById('push-input');
+    const page = makePage(el.value.trim() || 'Страница');
+    stack = stack.slice(0, cur + 1);   // drop forward history
+    stack.push(page);
+    cur = stack.length - 1;
+    setLog('push()', `Открыта «${page.name}» — весь стек вперёд сброшен`, '#6366f1');
+    render(true);
+    el.value = ''; el.focus();
+  }
+
+  function doReplace() {
+    if (cur < 0) return;
+    const el  = document.getElementById('replace-input');
+    const old = stack[cur].name;
+    const page = makePage(el.value.trim() || 'Страница');
+    stack = stack.slice(0, cur + 1);   // drop forward history — same as push!
+    stack[cur] = page;
+    setLog('replace()', `«${old}» → «${page.name}» — старая стёрта, стек вперёд сброшен`, '#f59e0b');
+    render(true);
+  }
+
+  function doBack() {
+    if (cur <= 0) return;
+    const from = stack[cur].name;
+    cur--;
+    setLog('goBack()', `← с «${from}» на «${stack[cur].name}»`, '#10b981');
+    render(true);
+  }
+
+  function doForward() {
+    if (cur >= stack.length - 1) return;
+    const from = stack[cur].name;
+    cur++;
+    setLog('goForward()', `→ с «${from}» на «${stack[cur].name}»`, '#0ea5e9');
+    render(true);
+  }
+
+  function doGo() {
+    const n = parseInt(document.getElementById('go-input').value, 10);
+    if (isNaN(n) || n === 0) { alert('Введите любое целое число кроме 0 (например −2 или +2)'); return; }
+    const next = cur + n;
+    if (next < 0 || next >= stack.length) {
+      setLog('go('+n+')', 'Нельзя — выход за пределы истории', '#ef4444');
+      const btn = document.getElementById('btn-go');
+      let s = 0;
+      const t = setInterval(() => { btn.style.transform=`translateX(${s++%2?4:-4}px)`; if(s>6){clearInterval(t);btn.style.transform='';} }, 50);
+      return;
+    }
+    const from = stack[cur].name; cur = next;
+    const dir  = n > 0 ? 'вперёд' : 'назад';
+    setLog('go('+n+')', `Прыжок ${dir}: «${from}» → «${stack[cur].name}» (${Math.abs(n)} шага)`, '#ef4444');
+    render(true);
+  }
+
+  document.getElementById('push-input').addEventListener('keydown',    e => e.key==='Enter' && doPush());
+  document.getElementById('replace-input').addEventListener('keydown', e => e.key==='Enter' && doReplace());
+  document.getElementById('go-input').addEventListener('keydown',      e => e.key==='Enter' && doGo());
+
+  render();
+  ['Главная','Каталог','Статья'].forEach((name, i) => setTimeout(() => {
+    document.getElementById('push-input').value = name; doPush();
+  }, 400 + i * 400));
+</script>
+</body>
+</html>
