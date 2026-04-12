@@ -543,7 +543,7 @@ html, body {
   document.getElementById('go-input').addEventListener('keydown',      e => e.key==='Enter' && doGo());
 
   render();
-  ['Главная','Каталог','Статья'].forEach((name, i) => setTimeout(() => {
+  ['Главная','Каталог','Разводящая'].forEach((name, i) => setTimeout(() => {
     document.getElementById('push-input').value = name; doPush();
   }, 400 + i * 400));
 </script>
