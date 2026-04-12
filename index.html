@@ -270,6 +270,124 @@ html, body {
 .back-card { --ac: #10b981; }
 .fwd-card  { --ac: #0ea5e9; }
 .go-card   { --ac: #ef4444; }
+
+/* ===================== MOBILE ===================== */
+@media (max-width: 768px) {
+  html, body {
+    overflow-x: hidden;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .app {
+    height: auto;
+    min-height: 100dvh;
+    min-height: -webkit-fill-available;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto auto auto auto;
+    grid-template-areas:
+      "browser"
+      "timeline"
+      "log"
+      "sidebar";
+    gap: 10px;
+    padding:
+      max(8px, env(safe-area-inset-top, 0px))
+      max(8px, env(safe-area-inset-right, 0px))
+      max(8px, env(safe-area-inset-bottom, 0px))
+      max(8px, env(safe-area-inset-left, 0px));
+  }
+
+  .browser-bar {
+    padding: 8px 10px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .address-bar {
+    font-size: 11px;
+    padding: 6px 10px;
+    min-width: 0;
+  }
+
+  .nav-btn {
+    width: 36px;
+    height: 36px;
+    font-size: 18px;
+  }
+
+  .page-display {
+    padding: 20px 16px;
+    min-height: 100px;
+  }
+
+  .page-icon-big { font-size: 40px; }
+  .page-name-big { font-size: 18px; text-align: center; }
+
+  .timeline-wrap {
+    padding: 12px 12px;
+    min-height: 0;
+  }
+
+  .tl-bubble {
+    width: 38px;
+    height: 38px;
+    font-size: 17px;
+  }
+
+  .tl-line {
+    width: 22px;
+    top: -11px;
+  }
+
+  .log-wrap {
+    flex-wrap: wrap;
+    align-items: flex-start;
+    row-gap: 6px;
+    padding: 10px 12px;
+  }
+
+  .log-text {
+    white-space: normal;
+    word-break: break-word;
+    line-height: 1.35;
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .log-time {
+    flex-shrink: 0;
+  }
+
+  .sidebar {
+    overflow: visible;
+    padding-bottom: max(4px, env(safe-area-inset-bottom, 0px));
+  }
+
+  .action-card {
+    padding: 12px;
+  }
+
+  .ac-body {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .ac-body .ac-input:not(.narrow) {
+    flex: 1 1 100%;
+    min-width: 0;
+  }
+
+  .ac-body .ac-btn:not(.ac-btn-full) {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 380px) {
+  .dots { display: none; }
+  .browser-bar { gap: 6px; }
+}
 </style>
 </head>
 <body>
