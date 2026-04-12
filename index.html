@@ -411,6 +411,11 @@ html, body {
     'поиск':       { icon:'🔍', url:'/search' },
     'блог':        { icon:'✍️', url:'/blog' },
     'обновлённая': { icon:'✨', url:'/updated' },
+    'разводящая':  { icon:'📑', url:'/hub' },
+    'шаг 1':       { icon:'1️⃣', url:'/step-1' },
+    'шаг 2':       { icon:'2️⃣', url:'/step-2' },
+    'шаг 3':       { icon:'3️⃣', url:'/step-3' },
+    'статусный экран': { icon:'✅', url:'/status' },
   };
 
   function makePage(name) {
@@ -544,8 +549,18 @@ html, body {
   document.getElementById('go-input').addEventListener('keydown',      e => e.key==='Enter' && doGo());
 
   render();
-  ['Главная','Каталог','Разводящая'].forEach((name, i) => setTimeout(() => {
-    document.getElementById('push-input').value = name; doPush();
+  const DEMO_PAGES = ['Главная', 'Каталог', 'Разводящая', 'Шаг 1', 'Шаг 2', 'Шаг 3', 'Статусный экран'];
+  const DEMO_ACTIVE_INDEX = 2;
+  DEMO_PAGES.forEach((name, i) => setTimeout(() => {
+    document.getElementById('push-input').value = name;
+    doPush();
+    if (i === DEMO_PAGES.length - 1) {
+      setTimeout(() => {
+        cur = DEMO_ACTIVE_INDEX;
+        setLog('(старт)', 'Демо: активна «Разводящая» — вперёд доступны шаги и статус', '#6366f1');
+        render(false);
+      }, 0);
+    }
   }, 400 + i * 400));
 </script>
 </body>
