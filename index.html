@@ -127,7 +127,6 @@ html, body {
   flex: 1;
   padding-bottom: 2px;
   gap: 0;
-  position: relative;
 }
 .timeline::-webkit-scrollbar { height: 4px; }
 .timeline::-webkit-scrollbar-thumb { background: #e0e0e0; border-radius: 2px; }
@@ -173,51 +172,6 @@ html, body {
 .tl-step.future .tl-line { opacity: .3; }
 
 .tl-empty { color: #ccc; font-size: 13px; }
-
-.tl-step.is-shattering { opacity: 0 !important; }
-
-.tl-shatter-layer {
-  position: absolute;
-  left: 0; top: 0;
-  pointer-events: none;
-  z-index: 6;
-}
-
-.tl-shatter-ghost {
-  position: absolute;
-  margin: 0;
-  animation: shatterGhost .45s cubic-bezier(.22,.61,.36,1) forwards;
-}
-
-.tl-shatter-ghost .tl-bubble,
-.tl-shatter-ghost .tl-name,
-.tl-shatter-ghost .tl-line {
-  transition: none;
-}
-
-.tl-shard {
-  position: absolute;
-  left: 20px;
-  top: 17px;
-  width: 6px;
-  height: 4px;
-  border-radius: 2px;
-  background: var(--chip, #d1d5db);
-  opacity: 0;
-  animation: shatterChip .45s ease-out forwards;
-  animation-delay: var(--delay, 0ms);
-  transform: translate(-50%, -50%) scale(.7);
-}
-
-@keyframes shatterGhost {
-  0%   { opacity: 1; transform: translate3d(0,0,0) scale(1) rotate(0deg); filter: none; }
-  100% { opacity: 0; transform: translate3d(var(--dx), var(--dy), 0) scale(.84) rotate(var(--rot)); filter: blur(1px); }
-}
-
-@keyframes shatterChip {
-  0%   { opacity: .9; transform: translate(-50%, -50%) scale(.7) rotate(0deg); }
-  100% { opacity: 0; transform: translate(calc(-50% + var(--sx)), calc(-50% + var(--sy))) scale(.15) rotate(var(--srot)); }
-}
 
 /* ===================== LOG ===================== */
 .log-wrap {
@@ -552,7 +506,6 @@ html, body {
 <script>
   let stack = [];
   let cur   = -1;
-  let isTimelineAnimating = false;
 
   const PALETTE = [
     { c:'#6366f1', bg:'#eef2ff' },
@@ -655,81 +608,26 @@ html, body {
         .map(v => String(v).padStart(2,'0')).join(':');
   }
 
-  function animateFutureDrop(onDone) {
-    const end = () => { isTimelineAnimating = false; onDone(); };
-    if (isTimelineAnimating) return;
-    if (cur >= stack.length - 1) return onDone();
-    const tl = document.getElementById('timeline');
-    const allSteps = Array.from(tl.querySelectorAll('.tl-step'));
-    const doomed = allSteps.slice(cur + 1);
-    if (!doomed.length) return onDone();
-
-    isTimelineAnimating = true;
-    const layer = document.createElement('div');
-    layer.className = 'tl-shatter-layer';
-    layer.style.width = tl.scrollWidth + 'px';
-    layer.style.height = tl.clientHeight + 'px';
-    tl.appendChild(layer);
-
-    doomed.forEach((step, i) => {
-      step.classList.add('is-shattering');
-      const ghost = step.cloneNode(true);
-      ghost.classList.add('tl-shatter-ghost');
-      ghost.style.left = step.offsetLeft + 'px';
-      ghost.style.top = step.offsetTop + 'px';
-      ghost.style.width = step.offsetWidth + 'px';
-      ghost.style.height = step.offsetHeight + 'px';
-      ghost.style.setProperty('--dx', (36 + i * 8 + Math.random() * 22) + 'px');
-      ghost.style.setProperty('--dy', (-22 + Math.random() * 44) + 'px');
-      ghost.style.setProperty('--rot', (18 + Math.random() * 38) + 'deg');
-      const c = step.style.getPropertyValue('--c') || '#9ca3af';
-      const bg = step.style.getPropertyValue('--bg') || '#e5e7eb';
-
-      for (let s = 0; s < 11; s++) {
-        const shard = document.createElement('span');
-        shard.className = 'tl-shard';
-        shard.style.setProperty('--chip', s % 2 ? c : bg);
-        shard.style.setProperty('--sx', (-10 + Math.random() * 70) + 'px');
-        shard.style.setProperty('--sy', (-28 + Math.random() * 56) + 'px');
-        shard.style.setProperty('--srot', (-150 + Math.random() * 300) + 'deg');
-        shard.style.setProperty('--delay', (Math.random() * 110) + 'ms');
-        ghost.appendChild(shard);
-      }
-      layer.appendChild(ghost);
-    });
-
-    setTimeout(() => {
-      layer.remove();
-      doomed.forEach(step => step.classList.remove('is-shattering'));
-      end();
-    }, 470);
-  }
-
   function doPush() {
-    if (isTimelineAnimating) return;
     const el = document.getElementById('push-input');
     const page = makePage(el.value.trim() || 'Страница');
-    animateFutureDrop(() => {
-      stack = stack.slice(0, cur + 1);   // drop forward history
-      stack.push(page);
-      cur = stack.length - 1;
-      setLog('push()', `Открыта «${page.name}» — весь стек вперёд сброшен`, '#6366f1');
-      render(true);
-      el.value = ''; el.focus();
-    });
+    stack = stack.slice(0, cur + 1);   // drop forward history
+    stack.push(page);
+    cur = stack.length - 1;
+    setLog('push()', `Открыта «${page.name}» — весь стек вперёд сброшен`, '#6366f1');
+    render(true);
+    el.value = ''; el.focus();
   }
 
   function doReplace() {
-    if (cur < 0 || isTimelineAnimating) return;
+    if (cur < 0) return;
     const el  = document.getElementById('replace-input');
     const old = stack[cur].name;
     const page = makePage(el.value.trim() || 'Страница');
-    animateFutureDrop(() => {
-      stack = stack.slice(0, cur + 1);   // drop forward history — same as push!
-      stack[cur] = page;
-      setLog('replace()', `«${old}» → «${page.name}» — старая стёрта, стек вперёд сброшен`, '#f59e0b');
-      render(true);
-    });
+    stack = stack.slice(0, cur + 1);   // drop forward history — same as push!
+    stack[cur] = page;
+    setLog('replace()', `«${old}» → «${page.name}» — старая стёрта, стек вперёд сброшен`, '#f59e0b');
+    render(true);
   }
 
   function doBack() {
