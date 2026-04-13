@@ -239,6 +239,24 @@ html, body {
 
 .ac-head { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 10px; }
 
+.ac-head-text { flex: 1; }
+
+.ac-help-btn {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 50%;
+  background: #f3f4f6;
+  color: #666;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background .15s, transform .1s;
+}
+.ac-help-btn:hover { background: #e5e7eb; }
+.ac-help-btn:active { transform: scale(.96); }
+
 .ac-icon {
   font-size: 18px; width: 32px; height: 32px;
   background: color-mix(in srgb, var(--ac) 12%, white);
@@ -255,6 +273,16 @@ html, body {
 .ac-desc { font-size: 11px; color: #888; line-height: 1.45; }
 
 .ac-body { display: flex; gap: 6px; align-items: center; }
+
+.ac-help-note {
+  margin-top: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ac) 12%, white);
+  color: #444;
+  font-size: 12px;
+  line-height: 1.4;
+}
 
 .ac-input {
   flex: 1; min-width: 0;
@@ -286,6 +314,24 @@ html, body {
 .back-card { --ac: #10b981; }
 .fwd-card  { --ac: #0ea5e9; }
 .go-card   { --ac: #ef4444; }
+
+.docs-card {
+  border-left: 3px solid #64748b;
+}
+
+.docs-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #334155;
+  text-decoration: none;
+}
+
+.docs-link:hover {
+  text-decoration: underline;
+}
 
 /* ===================== VERSION MODAL ===================== */
 .modal-backdrop {
@@ -510,70 +556,97 @@ html, body {
     <div class="action-card push-card">
       <div class="ac-head">
         <div class="ac-icon">➕</div>
-        <div>
+        <div class="ac-head-text">
           <div class="ac-label">history.push()</div>
           <div class="ac-desc">Новая страница поверх текущей — прошлая сохраняется</div>
         </div>
+        <button class="ac-help-btn" data-help="push" type="button" aria-label="Что делает history.push()">?</button>
       </div>
       <div class="ac-body">
         <input class="ac-input" id="push-input" placeholder="Название..." value="Главная" />
         <button class="ac-btn" onclick="doPush()">Добавить</button>
       </div>
+      <div class="ac-help-note" id="help-push" hidden><strong>push:</strong> добавляет новую запись в историю и делает её текущей. Если вы были не на последней записи, стек вперёд очищается.</div>
     </div>
 
     <div class="action-card rep-card">
       <div class="ac-head">
         <div class="ac-icon">🔄</div>
-        <div>
+        <div class="ac-head-text">
           <div class="ac-label">history.replace()</div>
-          <div class="ac-desc">Заменяет только текущую страницу, не меняя стек вперёд</div>
+          <div class="ac-desc">Заменяет только текущую страницу и не очищает стек вперёд</div>
         </div>
+        <button class="ac-help-btn" data-help="replace" type="button" aria-label="Что делает history.replace()">?</button>
       </div>
       <div class="ac-body">
         <input class="ac-input" id="replace-input" placeholder="Новое название..." value="Обновлённая" />
         <button class="ac-btn" id="btn-replace" onclick="doReplace()">Заменить</button>
       </div>
+      <div class="ac-help-note" id="help-replace" hidden><strong>replace:</strong> заменяет текущую запись в истории, не добавляя новую, и не очищает стек вперёд.</div>
     </div>
 
     <div class="action-card back-card">
       <div class="ac-head">
         <div class="ac-icon">⬅️</div>
-        <div>
+        <div class="ac-head-text">
           <div class="ac-label">history.goBack()</div>
           <div class="ac-desc">Один шаг назад — как кнопка «‹» браузера</div>
         </div>
+        <button class="ac-help-btn" data-help="back" type="button" aria-label="Что делает history.goBack()">?</button>
       </div>
       <div class="ac-body">
         <button class="ac-btn ac-btn-full" id="btn-back" onclick="doBack()">← Назад на одну страницу</button>
       </div>
+      <div class="ac-help-note" id="help-back" hidden><strong>goBack:</strong> переносит на предыдущую запись истории, если она есть.</div>
     </div>
 
     <div class="action-card fwd-card">
       <div class="ac-head">
         <div class="ac-icon">➡️</div>
-        <div>
+        <div class="ac-head-text">
           <div class="ac-label">history.goForward()</div>
           <div class="ac-desc">Один шаг вперёд — как кнопка «›» браузера</div>
         </div>
+        <button class="ac-help-btn" data-help="forward" type="button" aria-label="Что делает history.goForward()">?</button>
       </div>
       <div class="ac-body">
         <button class="ac-btn ac-btn-full" id="btn-fwd" onclick="doForward()">Вперёд на одну страницу →</button>
       </div>
+      <div class="ac-help-note" id="help-forward" hidden><strong>goForward:</strong> переносит на следующую запись из forward-стека, если она существует.</div>
     </div>
 
     <div class="action-card go-card">
       <div class="ac-head">
         <div class="ac-icon">⏩</div>
-        <div>
+        <div class="ac-head-text">
           <div class="ac-label">history.go(N)</div>
           <div class="ac-desc">Прыжок на N шагов: отрицательное — назад, положительное — вперёд</div>
         </div>
+        <button class="ac-help-btn" data-help="go" type="button" aria-label="Что делает history.go(N)">?</button>
       </div>
       <div class="ac-body">
         <span class="ac-muted">go(</span>
         <input class="ac-input narrow" id="go-input" type="number" value="-2" />
         <span class="ac-muted">)</span>
         <button class="ac-btn" id="btn-go" onclick="doGo()">Прыгнуть</button>
+      </div>
+      <div class="ac-help-note" id="help-go" hidden><strong>go(N):</strong> перемещает на N записей истории: `N &lt; 0` — назад, `N &gt; 0` — вперёд.</div>
+    </div>
+
+    <div class="action-card docs-card">
+      <div class="ac-head" style="margin-bottom:0;">
+        <div class="ac-icon">📚</div>
+        <div class="ac-head-text">
+          <div class="ac-label" style="color:#334155;">Документация</div>
+          <a
+            class="docs-link"
+            href="https://developer.mozilla.org/en-US/docs/Web/API/History_API"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            History API на MDN ↗
+          </a>
+        </div>
       </div>
     </div>
   </div>
@@ -774,6 +847,23 @@ html, body {
   document.getElementById('push-input').addEventListener('keydown',    e => e.key==='Enter' && doPush());
   document.getElementById('replace-input').addEventListener('keydown', e => e.key==='Enter' && doReplace());
   document.getElementById('go-input').addEventListener('keydown',      e => e.key==='Enter' && doGo());
+
+  function hideAllHelpNotes() {
+    document.querySelectorAll('.ac-help-note').forEach((note) => {
+      note.hidden = true;
+    });
+  }
+
+  document.querySelectorAll('.ac-help-btn').forEach((btn) => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.help;
+      const note = document.getElementById('help-' + key);
+      if (!note) return;
+      const willShow = note.hidden;
+      hideAllHelpNotes();
+      note.hidden = !willShow;
+    });
+  });
 
   const versionModalBackdrop = document.getElementById('version-modal-backdrop');
   const versionHelpBtn = document.getElementById('version-help-btn');
