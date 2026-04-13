@@ -526,7 +526,7 @@ html, body {
         <div class="ac-icon">🔄</div>
         <div>
           <div class="ac-label">history.replace()</div>
-          <div class="ac-desc">Заменяет текущую страницу и стирает весь стек вперёд — как и push()</div>
+          <div class="ac-desc">Заменяет только текущую страницу, не меняя стек вперёд</div>
         </div>
       </div>
       <div class="ac-body">
@@ -711,10 +711,16 @@ html, body {
         .map(v => String(v).padStart(2,'0')).join(':');
   }
 
+  function dropForwardHistory() {
+    if (cur < stack.length - 1) {
+      stack.length = cur + 1;
+    }
+  }
+
   function doPush() {
     const el = document.getElementById('push-input');
     const page = makePage(el.value.trim() || 'Страница');
-    stack = stack.slice(0, cur + 1);   // drop forward history
+    dropForwardHistory();
     stack.push(page);
     cur = stack.length - 1;
     setLog('push()', `Открыта «${page.name}» — весь стек вперёд сброшен`, '#6366f1');
@@ -727,9 +733,8 @@ html, body {
     const el  = document.getElementById('replace-input');
     const old = stack[cur].name;
     const page = makePage(el.value.trim() || 'Страница');
-    stack = stack.slice(0, cur + 1);   // drop forward history — same as push!
     stack[cur] = page;
-    setLog('replace()', `«${old}» → «${page.name}» — старая стёрта, стек вперёд сброшен`, '#f59e0b');
+    setLog('replace()', `«${old}» → «${page.name}» — замена без изменения стека вперёд`, '#f59e0b');
     render(true);
   }
 
